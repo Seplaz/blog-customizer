@@ -3,7 +3,8 @@ import { Button } from 'src/ui/button';
 
 import styles from './ArticleParamsForm.module.scss';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
+import { useOutsideClickClose } from 'src/ui/select/hooks/useOutsideClickClose';
 import clsx from 'clsx';
 import {
 	fontFamilyOptions,
@@ -11,70 +12,38 @@ import {
 	backgroundColors,
 	contentWidthArr,
 	fontSizeOptions,
-	defaultArticleState,
-	OptionType,
+	ArticleStateType,
 } from 'src/constants/articleProps';
 import { Text } from 'src/ui/text';
 import { Select } from 'src/ui/select';
 import { RadioGroup } from 'src/ui/radio-group';
 import { Separator } from 'src/ui/separator';
 
-export const ArticleParamsForm = () => {
+type ArticleParamsFormProps = {
+	formParams: ArticleStateType;
+	onChange: (newParams: Partial<ArticleStateType>) => void;
+	onApply: () => void;
+	onReset: () => void;
+};
+
+export const ArticleParamsForm = ({
+	formParams,
+	onChange,
+	onApply,
+	onReset,
+}: ArticleParamsFormProps) => {
 	const [isSidebarOpen, setSidebarOpen] = useState<boolean>(false);
-	const [fontFamily, setFontFamily] = useState(
-		defaultArticleState.fontFamilyOption
-	);
-	const [fontSize, setFontSize] = useState(defaultArticleState.fontSizeOption);
-	const [fontColor, setFontColor] = useState(defaultArticleState.fontColor);
-	const [backgroundColor, setBackgroundColor] = useState(
-		defaultArticleState.backgroundColor
-	);
-	const [contentWidth, setContentWidth] = useState(
-		defaultArticleState.contentWidth
-	);
+	const sidebarRef = useRef<HTMLDivElement>(null);
 
-	const sidebarRef = useRef<HTMLElement>(null);
-
-	useEffect(() => {
-		if (!isSidebarOpen) return;
-
-		const handleClickOutside = (event: MouseEvent) => {
-			if (
-				sidebarRef.current &&
-				!sidebarRef.current.contains(event.target as Node)
-			) {
-				setSidebarOpen(false);
-			}
-		};
-
-		document.addEventListener('mousedown', handleClickOutside);
-		return () => {
-			document.removeEventListener('mousedown', handleClickOutside);
-		};
-	}, [isSidebarOpen]);
+	useOutsideClickClose({
+		isOpen: isSidebarOpen,
+		rootRef: sidebarRef,
+		onClose: () => setSidebarOpen(false),
+		onChange: setSidebarOpen,
+	});
 
 	const handleToggleSidebar = () => {
 		setSidebarOpen(!isSidebarOpen);
-	};
-
-	const handleFontFamilyChange = (option: OptionType) => {
-		setFontFamily(option);
-	};
-
-	const handleSetFontSize = (option: OptionType) => {
-		setFontSize(option);
-	};
-
-	const handleSetFontColor = (option: OptionType) => {
-		setFontColor(option);
-	};
-
-	const handleSetBackgroundColor = (option: OptionType) => {
-		setBackgroundColor(option);
-	};
-
-	const handleSetContentWidth = (option: OptionType) => {
-		setContentWidth(option);
 	};
 
 	return (
@@ -85,62 +54,61 @@ export const ArticleParamsForm = () => {
 				className={clsx(styles.container, {
 					[styles.container_open]: isSidebarOpen,
 				})}>
-				<form className={styles.form}>
+				<form
+					className={styles.form}
+					onSubmit={(event) => {
+						event.preventDefault();
+						onApply();
+					}}
+					onReset={(event) => {
+						event.preventDefault();
+						onReset();
+					}}>
 					<Text as='h2' size={31} weight={800} uppercase>
 						Задайте параметры
 					</Text>
 
 					<Select
-						selected={fontFamily}
+						selected={formParams.fontFamilyOption}
 						options={fontFamilyOptions}
-						onChange={handleFontFamilyChange}
+						onChange={(option) => onChange({ fontFamilyOption: option })}
 						title='Шрифт'
 					/>
 
 					<RadioGroup
 						name='font-size'
 						options={fontSizeOptions}
-						selected={fontSize}
-						onChange={handleSetFontSize}
+						selected={formParams.fontSizeOption}
+						onChange={(option) => onChange({ fontSizeOption: option })}
 						title='Размер шрифта'
 					/>
 
 					<Select
-						selected={fontColor}
+						selected={formParams.fontColor}
 						options={fontColors}
-						onChange={handleSetFontColor}
+						onChange={(option) => onChange({ fontColor: option })}
 						title='Цвет шрифта'
 					/>
 
 					<Separator />
 
 					<Select
-						selected={backgroundColor}
+						selected={formParams.backgroundColor}
 						options={backgroundColors}
-						onChange={handleSetBackgroundColor}
+						onChange={(option) => onChange({ backgroundColor: option })}
 						title='Цвет фона'
 					/>
 
 					<Select
-						selected={contentWidth}
+						selected={formParams.contentWidth}
 						options={contentWidthArr}
-						onChange={handleSetContentWidth}
+						onChange={(option) => onChange({ contentWidth: option })}
 						title='Ширина контента'
 					/>
 
 					<div className={styles.bottomContainer}>
-						<Button
-							title='Сбросить'
-							onClick={() => {}}
-							htmlType='reset'
-							type='clear'
-						/>
-						<Button
-							title='Применить'
-							onClick={() => {}}
-							htmlType='submit'
-							type='apply'
-						/>
+						<Button title='Сбросить' htmlType='reset' type='clear' />
+						<Button title='Применить' htmlType='submit' type='apply' />
 					</div>
 				</form>
 			</aside>
